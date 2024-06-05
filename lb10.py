@@ -4,6 +4,8 @@ import requests
 import vosk
 import cv2
 import random
+import pyttsx3
+
 
 character_number = str(random.randint(1, 800))
 # print('https://rickandmortyapi.com/api/character/' + character_number)
@@ -11,6 +13,12 @@ model = vosk.Model('vosk-model-small-ru-0.22')
 web = 'https://rickandmortyapi.com/api/character/' + character_number
 response = requests.get(web)
 data = json.loads(response.content)
+
+
+engine = pyttsx3.init()
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[0].id)
+
 
 record = vosk.KaldiRecognizer(model, 16000)
 p = pyaudio.PyAudio()
@@ -33,20 +41,20 @@ def listen():
 
 def save_image():
     image_url = response.json()['image']
-    p = requests.get(image_url)
     out = open('img.jpeg', 'wb')
-    out.write(p.content)
+    out.write(requests.get(image_url).content)
     out.close()
-    print('Ваш персонаж сохранен')
+    engine.say('g Ваш персонаж сохранен')
+    engine.runAndWait()
 
 
 def get_image():
     image_url = response.json()['image']
-    p = requests.get(image_url)
-    out = open('img.jpegg', 'wb')
-    out.write(p.content)
+    out = open('img.jpeg', 'wb')
+    out.write(requests.get(image_url).content)
     out.close()
-    print('Ваш персонаж готов')
+    engine.say('g Ваш персонаж готов')
+    engine.runAndWait()
     img = cv2.imread('img.jpeg')
     cv2.imshow('image', img)
     cv2.waitKey(0)
@@ -55,19 +63,23 @@ def get_image():
 
 def get_name():
     name = response.json()["name"]
-    print('Имя вашего персонажа:', name)
+    engine.say(f'g Имя вашего персонажа: {name}')
+    engine.runAndWait()
 
 
 def get_episode():
     episode1 = str(response.json()["episode"])[42:-2]
-    print('Эпизод где встречался этот персонаж:', episode1)
+    engine.say(f'g Эпизод где встречался этот персонаж: {episode1}')
+    engine.runAndWait()
 
 
 def get_image_resolution():
     img = cv2.imread('img.jpeg')
     width, height, _ = img.shape
     resolution = str(width) + " x " + str(height)
-    print(resolution)
+    resolution = resolution.replace('x', 'на')
+    engine.say(f'g Разрешение вашей картинки {resolution}')
+    engine.runAndWait()
 
 
 for text in listen():
@@ -82,6 +94,9 @@ for text in listen():
     elif 'разрешение' in text:
         get_image_resolution()
     elif 'выход' in text:
+        engine.say(f'g До свидания ')
+        engine.runAndWait()
         break
     else:
-        print('Не удалось распознать команду')
+        engine.say('g Не удалось распознать команду')
+        engine.runAndWait()
